@@ -44,7 +44,7 @@ def draw_bounding_box(frame, bb, current_object=-1,):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
 
 
-def process_frame(frame, model, labels,  draw_bounding_boxes=True):
+def process_frame(frame, model, labels,  draw_bounding_boxes=True, min_conf_level=0.5):
     results = model(frame, verbose=False)
     detections = results[0].boxes
     bounding_boxes = []
@@ -61,7 +61,7 @@ def process_frame(frame, model, labels,  draw_bounding_boxes=True):
         classname = labels[classidx]
         conf = detections[i].conf.item()
 
-        if conf > 0.5:
+        if conf >= min_conf_level:
             bb = BoundingBox(xmin, ymin, xmax, ymax, classidx, classname, conf)
             object_count += 1
             bounding_boxes.append(bb)
