@@ -1,0 +1,6 @@
+fastapi[standard]
+python-multipart
+numpy
+opencv-python
+ultralytics
+Pillow 

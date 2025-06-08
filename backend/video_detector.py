@@ -186,5 +186,5 @@ def process_image(image_path, model_path='models\\best.pt', min_conf_level=0.5):
 
 
 if __name__ == '__main__':
-    process_video('test_video.mp4',
-                  model_path='models\TrafficRoadObjectDetectionPolish12kDataset\\40_epochs.pt')
+    process_video('../test_folder/test_video.mp4',
+                  model_path='models\\best.pt')

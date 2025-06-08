@@ -1,0 +1,92 @@
+<div class="bg-gray-100 min-h-screen font-sans text-gray-800">
+  <header class="bg-blue-600 text-white shadow-md p-4">
+    <h1 class="text-3xl font-bold text-center">Car Object Detection</h1>
+  </header>
+
+  <main class="p-4 md:p-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- Left Panel: Controls and Original Image -->
+      <div class="bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Controls</h2>
+        <div class="space-y-4">
+          <!-- Model Selector -->
+          <div>
+            <label for="model-selector" class="block text-sm font-medium text-gray-700 mb-1">Choose Model:</label>
+            <select id="model-selector" [(ngModel)]="selectedModel" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm">
+              <option *ngFor="let model of models$ | async" [value]="model">{{ model }}</option>
+            </select>
+          </div>
+
+          <!-- File Uploader -->
+          <div>
+            <label for="file-upload" class="block text-sm font-medium text-gray-700 mb-1">Upload Image:</label>
+            <input id="file-upload" type="file" (change)="onFileSelected($event)" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+          </div>
+
+          <!-- Predict Button -->
+          <button (click)="onPredict()" [disabled]="(loading$ | async) || !selectedFile" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-300">
+            <span *ngIf="!(loading$ | async)">Predict</span>
+            <span *ngIf="loading$ | async">
+              <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Processing...
+            </span>
+          </button>
+
+          <!-- Error Message -->
+          <div *ngIf="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong class="font-bold">Error:</strong>
+            <span class="block sm:inline">{{ errorMessage }}</span>
+          </div>
+        </div>
+
+        <!-- Original Image Preview -->
+        <div *ngIf="originalImageSrc" class="mt-6">
+          <h3 class="text-xl font-semibold mb-2">Original Image</h3>
+          <img #originalImage [src]="originalImageSrc" alt="Original Upload" class="rounded-lg shadow-md max-w-full h-auto">
+        </div>
+      </div>
+
+      <!-- Right Panel: Processed Image and Detections -->
+      <div class="bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Results</h2>
+        <div *ngIf="predictionResult; else noResults">
+          <!-- Processed Image -->
+          <div>
+            <h3 class="text-xl font-semibold mb-2">Processed Image</h3>
+            <img [src]="predictionResult.image" alt="Processed Image with Detections" class="rounded-lg shadow-md max-w-full h-auto">
+          </div>
+          <!-- Detection List -->
+          <div class="mt-6">
+            <h3 class="text-xl font-semibold mb-2">Detections</h3>
+            <ul class="list-disc list-inside bg-gray-50 p-4 rounded-md max-h-60 overflow-y-auto">
+              <li *ngFor="let box of predictionResult.boxes" class="text-sm">
+                {{ box.class_name }} (Confidence: {{ (box.conf * 100).toFixed(2) }}%) at [x:{{box.x}}, y:{{box.y}}, w:{{box.w}}, h:{{box.h}}]
+              </li>
+            </ul>
+          </div>
+        </div>
+        <ng-template #noResults>
+            <div class="text-center text-gray-500 mt-8">
+                <p>Click "Predict" to see results here.</p>
+            </div>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- Bottom Panel: Detections Carousel -->
+    <div *ngIf="croppedDetections.length > 0" class="mt-8 bg-white p-6 rounded-lg shadow-lg">
+      <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Cropped Detections</h2>
+      <div #carousel class="flex overflow-x-auto space-x-4 p-4 bg-gray-100 rounded-md">
+        <div *ngFor="let detection of croppedDetections" class="relative flex-shrink-0 transition-transform duration-200 ease-in-out hover:scale-110 cursor-pointer">
+          <img [src]="detection.imageData" alt="Cropped Detection" class="h-40 w-auto object-cover rounded-lg shadow-md">
+          <span class="absolute top-0 left-0 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-tl-lg rounded-br-lg shadow-sm">
+            {{ detection.label }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
