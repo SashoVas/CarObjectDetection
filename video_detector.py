@@ -73,7 +73,7 @@ def process_frame(frame, model, labels,  draw_bounding_boxes=True, min_conf_leve
     return bounding_boxes
 
 
-def process_continuous_form_input(cap, model):
+def process_continuous_form_input(cap, model, min_conf_level=0.5):
     resize = True
     resW = 1280
     resH = 720
@@ -96,7 +96,8 @@ def process_continuous_form_input(cap, model):
         if resize == True:
             frame = cv2.resize(frame, (resW, resH))
 
-        bbs = process_frame(frame, model, labels, draw_bounding_boxes=False)
+        bbs = process_frame(
+            frame, model, labels, draw_bounding_boxes=False, min_conf_level=min_conf_level)
 
         if bbs:
             for i in range(len(bbs)):
@@ -125,18 +126,18 @@ def process_continuous_form_input(cap, model):
         avg_frame_rate = np.mean(frame_rate_buffer)
 
 
-def process_cam(model_path='my_model.pt'):
+def process_cam(model_path='models\\best.pt', min_conf_level=0.5):
     cap = cv2.VideoCapture(0)  # 0 is video cam usb
     model = YOLO(model_path, task='detect')
-    process_continuous_form_input(cap, model)
+    process_continuous_form_input(cap, model, min_conf_level)
     cap.release()
     cv2.destroyAllWindows()
 
 
-def process_video(video_path, model_path='my_model.pt'):
+def process_video(video_path, model_path='models\\best.pt', min_conf_level=0.5):
     cap = cv2.VideoCapture(video_path)
     model = YOLO(model_path, task='detect')
-    process_continuous_form_input(cap, model)
+    process_continuous_form_input(cap, model, min_conf_level)
     cap.release()
     cv2.destroyAllWindows()
     cap.release()
@@ -159,20 +160,31 @@ def read_image(imgs_list, current_image):
 
 
 def plot_frame(frame):
+    plt.figure(figsize=(16, 9))  # 1280x720 is 16:9 aspect ratio
     plt.axis("off")
     plt.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+    plt.show()
 
 
-def process_folder(folder, model_path='my_model.pt', visualize=True):
+def process_folder(folder, model_path='models\\best.pt', visualize=True, min_conf_level=0.5):
     images = get_folder(folder)
     model = YOLO(model_path, task='detect')
     for cur in range(len(images)):
         frame = read_image(images, cur)
-        bounding_boxes = process_frame(frame, model, model.names)
+        bounding_boxes = process_frame(
+            frame, model, model.names, min_conf_level)
         if visualize:
             plot_frame(frame)
         yield frame, bounding_boxes
 
 
+def process_image(image_path, model_path='models\\best.pt', min_conf_level=0.5):
+    model = YOLO(model_path, task='detect')
+    frame = cv2.imread(image_path)
+    bounding_boxes = process_frame(frame, model, model.names, min_conf_level)
+    return frame, bounding_boxes
+
+
 if __name__ == '__main__':
-    process_video('test_video.mp4')
+    process_video('test_video.mp4',
+                  model_path='models\TrafficRoadObjectDetectionPolish12kDataset\\40_epochs.pt')
