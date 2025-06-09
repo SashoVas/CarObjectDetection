@@ -200,3 +200,4 @@ test_folder/*
 # Remove most of the testing models
 backend/models/TrafficRoadObjectDetectionPolish12kDataset/*
 backend/models/TrafficDetectionProjectDataset/*
+backend/models/Car Tracking & Object Detection Dataset/*
