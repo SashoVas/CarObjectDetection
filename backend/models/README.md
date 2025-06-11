@@ -12,6 +12,7 @@
 | Car Tracking & Object Detection Dataset  | 10_epochs.pt       | 0.4234   | 0.2882    | 0.7889   |   0.989      |  0.956     |  0.991  |   0.895  |211| 5 sec|
 | Car Tracking & Object Detection Dataset  | 15_epochs.pt       | 0.4255   | 0.2868    | 0.7753   |   0.982      |   0.966     | 0.991  |   0.9  |211| 5 sec|
 | Car Tracking & Object Detection Dataset  | 20_epochs.pt       | 0.3598   | 0.2403    | 0.7809   |  0.978      |   0.967     |0.993  |  0.916  |211| 5 sec|
+| 26 Class Object detection dataset  | 15_epochs.pt       | 0.8517   | 0.5449    | 1.161   |  0.741      |   0.496     |0.514  |  0.356  |32 500| 6 min 40 sec|
 
 
 
