@@ -5,10 +5,12 @@ import numpy as np
 import glob
 import sys
 import matplotlib.pyplot as plt
+import time
 
 
 bbox_colors = [(164, 120, 87), (68, 148, 228), (93, 97, 209), (178, 182, 133), (88, 159, 106),
                (96, 202, 231), (159, 124, 168), (169, 162, 241), (98, 118, 150), (172, 176, 184)]
+VIDEO_OUTPUT_FILE = 'generation_results/record.avi'
 
 
 class BoundingBox:
@@ -73,7 +75,7 @@ def process_frame(frame, model, labels,  draw_bounding_boxes=True, min_conf_leve
     return bounding_boxes
 
 
-def process_continuous_form_input(cap, model, min_conf_level=0.5):
+def process_continuous_form_input(cap, model, min_conf_level=0.5, show_on_screen=True, create_record=False):
     resize = True
     resW = 1280
     resH = 720
@@ -84,7 +86,9 @@ def process_continuous_form_input(cap, model, min_conf_level=0.5):
     avg_frame_rate = 0
     frame_rate_buffer = []
     fps_avg_len = 200
-
+    if create_record:
+        recorder = cv2.VideoWriter(VIDEO_OUTPUT_FILE, cv2.VideoWriter_fourcc(
+            *'MJPG'), 30, (resW, resH))
     while True:
 
         t_start = time.perf_counter()
@@ -96,17 +100,16 @@ def process_continuous_form_input(cap, model, min_conf_level=0.5):
         if resize == True:
             frame = cv2.resize(frame, (resW, resH))
 
-        bbs = process_frame(
-            frame, model, labels, draw_bounding_boxes=False, min_conf_level=min_conf_level)
+        process_frame(
+            frame, model, labels, draw_bounding_boxes=True, min_conf_level=min_conf_level)
 
-        if bbs:
-            for i in range(len(bbs)):
-                draw_bounding_box(frame, bbs[i])
+        if show_on_screen:
+            cv2.putText(frame, f'FPS: {avg_frame_rate:0.2f}', (10, 20),
+                        cv2.FONT_HERSHEY_SIMPLEX, .7, (0, 255, 255), 2)  # Draw framerate
+            cv2.imshow('YOLO detection results', frame)  # Display image
 
-        cv2.putText(frame, f'FPS: {avg_frame_rate:0.2f}', (10, 20),
-                    cv2.FONT_HERSHEY_SIMPLEX, .7, (0, 255, 255), 2)  # Draw framerate
-
-        cv2.imshow('YOLO detection results', frame)  # Display image
+        if create_record:
+            recorder.write(frame)
 
         t_stop = time.perf_counter()
         frame_rate_calc = float(1/(t_stop - t_start))
@@ -116,7 +119,7 @@ def process_continuous_form_input(cap, model, min_conf_level=0.5):
         else:
             frame_rate_buffer.append(frame_rate_calc)
 
-        key = cv2.waitKey(5)
+        key = cv2.waitKey(2)
 
         if key == ord('q') or key == ord('Q'):  # Press 'q' to quit
             break
@@ -125,19 +128,27 @@ def process_continuous_form_input(cap, model, min_conf_level=0.5):
 
         avg_frame_rate = np.mean(frame_rate_buffer)
 
+    if create_record:
+        recorder.release()
 
-def process_cam(model_path='models\\best.pt', min_conf_level=0.5):
+
+def process_cam(model_path='models\\best.pt', min_conf_level=0.5, show_on_screen=True, create_record=False):
     cap = cv2.VideoCapture(0)  # 0 is video cam usb
     model = YOLO(model_path, task='detect')
-    process_continuous_form_input(cap, model, min_conf_level)
+    process_continuous_form_input(
+        cap, model, min_conf_level, show_on_screen=show_on_screen, create_record=create_record)
     cap.release()
     cv2.destroyAllWindows()
 
 
-def process_video(video_path, model_path='models\\best.pt', min_conf_level=0.5):
+def process_video(video_path, model_path='models\\best.pt', min_conf_level=0.5, show_on_screen=True, create_record=False):
     cap = cv2.VideoCapture(video_path)
     model = YOLO(model_path, task='detect')
-    process_continuous_form_input(cap, model, min_conf_level)
+    start = time.time()
+    process_continuous_form_input(
+        cap, model, min_conf_level, show_on_screen=show_on_screen, create_record=create_record)
+    end = time.time()
+    print(f'Processing time: {end - start:.2f} seconds')
     cap.release()
     cv2.destroyAllWindows()
     cap.release()
@@ -186,5 +197,5 @@ def process_image(image_path, model_path='models\\best.pt', min_conf_level=0.5):
 
 
 if __name__ == '__main__':
-    process_video('../test_folder/test_video.mp4',
-                  model_path='models\\best.pt')
+    process_video('../test_folder/test_video_short.mp4',
+                  model_path='models\\best.pt', show_on_screen=False, create_record=True)
