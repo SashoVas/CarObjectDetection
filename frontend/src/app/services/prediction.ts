@@ -17,6 +17,10 @@ export interface PredictionResponse {
   boxes: Box[];
 }
 
+export interface VideoProcessResponse {
+  result_path: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -48,6 +52,29 @@ export class PredictionService {
         return this.handleError(err);
       })
     );
+  }
+
+  processVideo(model: string, video: File): Observable<VideoProcessResponse> {
+    const formData = new FormData();
+    formData.append('model', model);
+    formData.append('video', video);
+
+    this.loading.next(true);
+
+    return this.http.post<VideoProcessResponse>(`${this.apiUrl}/process-video`, formData).pipe(
+      catchError(err => {
+        this.loading.next(false);
+        return this.handleError(err);
+      })
+    );
+  }
+
+  public getApiUrl(): string {
+    return this.apiUrl;
+  }
+
+  public setLoading(isLoading: boolean) {
+    this.loading.next(isLoading);
   }
 
   private handleError(error: any) {

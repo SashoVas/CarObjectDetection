@@ -1,8 +1,9 @@
 import { Component, OnInit, ElementRef, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PredictionService, PredictionResponse, Box } from './services/prediction';
+import { PredictionService, PredictionResponse, Box, VideoProcessResponse } from './services/prediction';
 import { Observable } from 'rxjs';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-root',
@@ -20,12 +21,15 @@ export class App implements OnInit {
 
   selectedModel: string = '';
   selectedFile: File | null = null;
+  selectedFileType: 'image' | 'video' | null = null;
   originalImageSrc: string | ArrayBuffer | null = null;
+  originalVideoSrc: string | null = null;
   predictionResult: PredictionResponse | null = null;
+  processedVideoUrl: SafeUrl | null = null;
   errorMessage: string | null = null;
   croppedDetections: { imageData: string, label: string }[] = [];
 
-  constructor(private predictionService: PredictionService, private cdr: ChangeDetectorRef) {
+  constructor(private predictionService: PredictionService, private cdr: ChangeDetectorRef, private sanitizer: DomSanitizer) {
     this.models$ = this.predictionService.getModels();
     this.loading$ = this.predictionService.loading$;
   }
@@ -43,35 +47,59 @@ export class App implements OnInit {
     let fileList: FileList | null = element.files;
     if (fileList && fileList.length > 0) {
       this.selectedFile = fileList[0];
+      this.selectedFileType = this.selectedFile.type.startsWith('image/') ? 'image' : 'video';
+      
+      // Reset states
       this.predictionResult = null;
       this.errorMessage = null;
       this.croppedDetections = [];
+      this.originalImageSrc = null;
+      this.originalVideoSrc = null;
+      this.processedVideoUrl = null;
 
-      const reader = new FileReader();
-      reader.onload = e => this.originalImageSrc = reader.result;
-      reader.readAsDataURL(this.selectedFile);
+      if (this.selectedFileType === 'image') {
+        const reader = new FileReader();
+        reader.onload = e => this.originalImageSrc = reader.result;
+        reader.readAsDataURL(this.selectedFile);
+      } else if (this.selectedFileType === 'video') {
+        this.originalVideoSrc = URL.createObjectURL(this.selectedFile);
+      }
     }
   }
 
   onPredict() {
     if (!this.selectedFile || !this.selectedModel) {
-      this.errorMessage = "Please select a model and an image.";
+      this.errorMessage = "Please select a model and a file.";
       return;
     }
 
     this.errorMessage = null;
     this.predictionResult = null;
+    this.processedVideoUrl = null;
     this.croppedDetections = [];
 
-    this.predictionService.detect(this.selectedModel, this.selectedFile).subscribe({
-      next: (result) => {
-        this.predictionResult = result;
-        this.generateCroppedImages();
-      },
-      error: (err) => {
-        this.errorMessage = err.message;
-      }
-    });
+    if (this.selectedFileType === 'image') {
+      this.predictionService.detect(this.selectedModel, this.selectedFile).subscribe({
+        next: (result) => {
+          this.predictionResult = result;
+          this.generateCroppedImages();
+        },
+        error: (err) => {
+          this.errorMessage = err.message;
+        }
+      });
+    } else if (this.selectedFileType === 'video') {
+      this.predictionService.processVideo(this.selectedModel, this.selectedFile).subscribe({
+        next: (response: VideoProcessResponse) => {
+
+          this.processedVideoUrl ='http://localhost:8000/' + response.result_path;
+          this.predictionService.setLoading(false);
+        },
+        error: (err) => {
+          this.errorMessage = err.message;
+        }
+      });
+    }
   }
 
   generateCroppedImages() {

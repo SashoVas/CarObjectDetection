@@ -5,9 +5,14 @@ import cv2
 import numpy as np
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse, FileResponse
 from PIL import Image
-from video_detector import BoundingBox, process_frame
+from video_detector import BoundingBox, process_frame, process_video
 from ultralytics import YOLO
+import uuid
+import shutil
+from fastapi import BackgroundTasks
+from fastapi import HTTPException
 
 app = FastAPI()
 
@@ -21,6 +26,8 @@ app.add_middleware(
 )
 
 MODELS_DIR = "models"
+TEMP_UPLOADS_DIR = "temp_uploads"
+GENERATION_RESULTS_DIR = "generation_results"
 # Caching models
 MODELS_CACHE = {}
 
@@ -50,6 +57,84 @@ async def get_models():
                     models.append(relative_path.replace('\\', '/'))
 
     return models
+
+
+def iter_file(path: str, start: int = 0, end: int = None, chunk_size: int = 1024*1024):
+    """
+    Generator to read a file in chunks from byte `start` to `end`.
+    """
+    with open(path, 'rb') as f:
+        f.seek(start)
+        remaining = (end - start + 1) if end is not None else None
+        while True:
+            read_size = chunk_size if remaining is None else min(
+                chunk_size, remaining)
+            data = f.read(read_size)
+            if not data:
+                break
+            yield data
+            if remaining:
+                remaining -= len(data)
+                if remaining <= 0:
+                    break
+
+
+@app.post("/process-video")
+async def process_video_endpoint(
+    model: str = Form(...),
+    video: UploadFile = File(...)
+):
+    """
+    Accepts a model name and a video, starts a background task for object detection,
+    and returns a path to retrieve the processed video later.
+    """
+    yolo_model = get_model(model)
+    if not yolo_model:
+        return {"error": "Model not found"}, 404
+
+    # Save uploaded video to a temporary location
+    temp_video_filename = f"{uuid.uuid4()}-{video.filename}"
+    temp_video_path = os.path.join(TEMP_UPLOADS_DIR, temp_video_filename)
+    with open(temp_video_path, "wb") as buffer:
+        shutil.copyfileobj(video.file, buffer)
+
+    # Prepare a unique path for the output video
+    output_video_filename = f"processed-{temp_video_filename}"
+    output_video_path = os.path.join(
+        GENERATION_RESULTS_DIR, output_video_filename)
+
+    process_video(video_path=temp_video_path,
+                  model=yolo_model,
+                  min_conf_level=0.4,
+                  show_on_screen=False,
+                  create_record=True,
+                  output_path=output_video_path,
+                  resW=854,
+                  resH=480)
+    # Return a URL-friendly path for the client to poll
+    result_url_path = os.path.join(
+        "generated-videos", output_video_filename).replace('\\', '/')
+    os.remove(temp_video_path)
+    return {"result_path": result_url_path}
+
+
+@app.get("/generated-videos/{video_filename:path}")
+async def get_generated_video(video_filename: str):
+    """
+    Streams a processed video file if it exists.
+    """
+    video_path = os.path.join(GENERATION_RESULTS_DIR, video_filename)
+
+    if not os.path.exists(video_path):
+        raise HTTPException(
+            status_code=404, detail="Video not found or is still being processed.")
+
+    # return FileResponse(video_path, media_type="video/mp4")
+    headers = {
+        "Content-Length": str(os.path.getsize(video_path)),
+        "Accept-Ranges": "bytes"
+    }
+    return StreamingResponse(iter_file(video_path), media_type="video/mp4", headers=headers)
 
 
 @app.post("/detect")
@@ -96,5 +181,11 @@ if __name__ == "__main__":
     if not os.path.exists(MODELS_DIR):
         os.makedirs(MODELS_DIR)
         print(f"Created directory: {MODELS_DIR}")
+    if not os.path.exists(TEMP_UPLOADS_DIR):
+        os.makedirs(TEMP_UPLOADS_DIR)
+        print(f"Created directory: {TEMP_UPLOADS_DIR}")
+    if not os.path.exists(GENERATION_RESULTS_DIR):
+        os.makedirs(GENERATION_RESULTS_DIR)
+        print(f"Created directory: {GENERATION_RESULTS_DIR}")
 
     uvicorn.run(app, host="0.0.0.0", port=8000)

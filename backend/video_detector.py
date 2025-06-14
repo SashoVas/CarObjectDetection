@@ -10,7 +10,6 @@ import time
 
 bbox_colors = [(164, 120, 87), (68, 148, 228), (93, 97, 209), (178, 182, 133), (88, 159, 106),
                (96, 202, 231), (159, 124, 168), (169, 162, 241), (98, 118, 150), (172, 176, 184)]
-VIDEO_OUTPUT_FILE = 'generation_results/record.avi'
 
 
 class BoundingBox:
@@ -75,20 +74,24 @@ def process_frame(frame, model, labels,  draw_bounding_boxes=True, min_conf_leve
     return bounding_boxes
 
 
-def process_continuous_form_input(cap, model, min_conf_level=0.5, show_on_screen=True, create_record=False):
+def process_continuous_form_input(cap, model, min_conf_level=0.5, show_on_screen=True, create_record=False, output_path='generation_results/record.mp4', resW=1280, resH=720):
     resize = True
-    resW = 1280
-    resH = 720
-    ret = cap.set(3, resW)
-    ret = cap.set(4, resH)
+
+    # ret = cap.set(3, resW)
+    # ret = cap.set(4, resH)
     labels = model.names
     print(labels)
     avg_frame_rate = 0
     frame_rate_buffer = []
     fps_avg_len = 200
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     if create_record:
-        recorder = cv2.VideoWriter(VIDEO_OUTPUT_FILE, cv2.VideoWriter_fourcc(
-            *'MJPG'), 30, (resW, resH))
+
+        output_frame_width = resW if resize else frame_width
+        output_frame_height = resH if resize else frame_height
+        recorder = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(
+            *'avc1'), 30, (output_frame_width, output_frame_height))
     while True:
 
         t_start = time.perf_counter()
@@ -132,25 +135,24 @@ def process_continuous_form_input(cap, model, min_conf_level=0.5, show_on_screen
         recorder.release()
 
 
-def process_cam(model_path='models\\best.pt', min_conf_level=0.5, show_on_screen=True, create_record=False):
+def process_cam(model_path='models\\best.pt', min_conf_level=0.5, show_on_screen=True, create_record=False, resW=1280, resH=720):
     cap = cv2.VideoCapture(0)  # 0 is video cam usb
     model = YOLO(model_path, task='detect')
     process_continuous_form_input(
-        cap, model, min_conf_level, show_on_screen=show_on_screen, create_record=create_record)
+        cap, model, min_conf_level, show_on_screen=show_on_screen, create_record=create_record, resW=resW, resH=resH)
     cap.release()
     cv2.destroyAllWindows()
 
 
-def process_video(video_path, model_path='models\\best.pt', min_conf_level=0.5, show_on_screen=True, create_record=False):
+def process_video(video_path, model=None, model_path='models\\best.pt', min_conf_level=0.5, show_on_screen=True, create_record=False, output_path='generation_results/record.mp4', resW=1280, resH=720):
     cap = cv2.VideoCapture(video_path)
-    model = YOLO(model_path, task='detect')
+    if model is None:
+        model = YOLO(model_path, task='detect')
     start = time.time()
     process_continuous_form_input(
-        cap, model, min_conf_level, show_on_screen=show_on_screen, create_record=create_record)
+        cap, model, min_conf_level, show_on_screen=show_on_screen, create_record=create_record, output_path=output_path, resW=resW, resH=resH)
     end = time.time()
     print(f'Processing time: {end - start:.2f} seconds')
-    cap.release()
-    cv2.destroyAllWindows()
     cap.release()
     cv2.destroyAllWindows()
 
@@ -198,4 +200,4 @@ def process_image(image_path, model_path='models\\best.pt', min_conf_level=0.5):
 
 if __name__ == '__main__':
     process_video('../test_folder/test_video_short.mp4',
-                  model_path='models\\best.pt', show_on_screen=False, create_record=True)
+                  model_path='models\\best.pt', show_on_screen=False, create_record=True, output_path='generation_results/record.mp4')
