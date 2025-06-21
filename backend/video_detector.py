@@ -199,5 +199,6 @@ def process_image(image_path, model_path='models\\best.pt', min_conf_level=0.5):
 
 
 if __name__ == '__main__':
-    process_video('../test_folder/test_video_short.mp4',
-                  model_path='models\\best.pt', show_on_screen=False, create_record=True, output_path='generation_results/record.mp4')
+    # process_video('../test_folder/test_video_short.mp4',
+    #              model_path='models\\best.pt', show_on_screen=False, create_record=True, output_path='generation_results/record.mp4')
+    process_cam()

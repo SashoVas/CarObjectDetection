@@ -202,3 +202,5 @@ backend/models/TrafficRoadObjectDetectionPolish12kDataset/*
 backend/models/TrafficDetectionProjectDataset/*
 backend/models/Car Tracking & Object Detection Dataset/*
 backend/models/26 Class Object detection dataset/*
+backend/models/Combined/*
+backend/models/Combined Augmented/*
