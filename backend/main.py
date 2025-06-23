@@ -105,7 +105,7 @@ async def process_video_endpoint(
 
     process_video(video_path=temp_video_path,
                   model=yolo_model,
-                  min_conf_level=0.4,
+                  min_conf_level=0.1,
                   show_on_screen=False,
                   create_record=True,
                   output_path=output_video_path,

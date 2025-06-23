@@ -15,6 +15,8 @@
 | 26 Class Object detection dataset  | 15_epochs.pt       | 0.8517   | 0.5449    | 1.161   |  0.741      |   0.496     |0.514  |  0.356  |32 500| 6 min 40 sec|
 | Combined Augmented  | 10_epochs.pt       | 0.9908    | 0.6573    | 1.021   |  0.846      |   0.732     |0.814  |  0.574  |50 000| 19 min |
 | Combined   | 30_epochs.pt       |0.9034    | 0.5393    | 0.9618   |  0.813      |   0.758     |0.831  |  0.59  |13 000| 2 min 30 sec |
+| Combined 7 Datasets  | 40_epochs.pt       |0.9076    | 0.5293    | 0.9526   |  0.808      |   0.704     |0.782  |  0.543  |17 000| 4 min |
+| Combined 10 Datasets  | 40_epochs.pt       |1.063    | 0.5994    | 1.029   |  0.814      |   0.69     |0.779  |  0.529  |29 000| 6 min |
 
 
 
