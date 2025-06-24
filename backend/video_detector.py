@@ -74,8 +74,7 @@ def process_frame(frame, model, labels,  draw_bounding_boxes=True, min_conf_leve
     return bounding_boxes
 
 
-def process_continuous_form_input(cap, model, min_conf_level=0.5, show_on_screen=True, create_record=False, output_path='generation_results/record.mp4', resW=1280, resH=720):
-    resize = True
+def process_continuous_form_input(cap, model, min_conf_level=0.5, show_on_screen=True, create_record=False, output_path='generation_results/record.mp4', resW=1280, resH=720, resize=True):
 
     # ret = cap.set(3, resW)
     # ret = cap.set(4, resH)

@@ -108,9 +108,7 @@ async def process_video_endpoint(
                   min_conf_level=0.1,
                   show_on_screen=False,
                   create_record=True,
-                  output_path=output_video_path,
-                  resW=854,
-                  resH=480)
+                  output_path=output_video_path)
     # Return a URL-friendly path for the client to poll
     result_url_path = os.path.join(
         "generated-videos", output_video_filename).replace('\\', '/')
